@@ -12,14 +12,14 @@ function ProfileSideBar(props) {
   return (
     <Box>
       <img
-        src={`https://github.com/${props.githubUser}.png`}
+        src={`https://github.com/${props.usuarioAleatorio}.png`}
         style={{ borderRadius: "8px" }}
         alt="perfil"
       />
       <hr />
       <p>
-        <a className="boxLink" href={`https://github.com/${props.githubUser}`}>
-          @{props.githubUser}
+        <a className="boxLink" href={`https://github.com/${props.usuarioAleatorio}`}>
+          @{props.usuarioAleatorio}
         </a>
       </p>
       <hr />
@@ -52,14 +52,8 @@ function ProfileRelationsBox(props) {
 
 export default function Home() {
   const [seguidores, setSeguidores] = useState([]);
-  const [comunidades, setComunidades] = useState([
-    {
-      id: "2021-07-14T01:33:34.025Z",
-      title: "Eu odeio acordar cedo",
-      image: "https://alurakut.vercel.app/capa-comunidade-01.jpg",
-    },
-  ]);
-  const githubUser = "gui-leandro";
+  const [comunidades, setComunidades] = useState([]);
+  const usuarioAleatorio = "gui-leandro";
   const pessoasFavoritas = [
     "juunegreiros",
     "omariosouto",
@@ -72,32 +66,70 @@ export default function Home() {
   function handleCreateComunity(e) {
     e.preventDefault();
 
-    const inputData = new FormData(e.target);
-    const newComunity = {
-      id: new Date().toISOString(),
-      title: inputData.get("title"),
-      image: inputData.get("image"),
-    };
+    const dadosDoForm = new FormData(e.target);
 
-    const updateComunities = [...comunidades, newComunity];
+    const comunidade = {
+      title: dadosDoForm.get('title'),
+      imageUrl: dadosDoForm.get('image'),
+      creatorSlug: usuarioAleatorio,
+    }
+
+    fetch("/api/comunidades", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(comunidade),
+    }).then(async (response) => {
+      const dados = await response.json();
+      console.log(dados.registroCriado);
+      const comunidade = dados.registroCriado;
+      const comunidadesAtualizadas = [...comunidades, comunidade];
+      setComunidades(comunidadesAtualizadas);
+    });
+
+    const updateComunities = [...comunidades, comunidade];
     setComunidades(updateComunities);
   }
 
   useEffect(() => {
-    fetch(
-      `https://api.github.com/users/${githubUser}/followers`
-    )
+    fetch(`https://api.github.com/users/${usuarioAleatorio}/followers`)
       .then(function (response) {
         return response.json();
       })
       .then(function (response) {
         setSeguidores(response);
       });
+
+    fetch("https://graphql.datocms.com/", {
+      method: "POST",
+      headers: {
+        Authorization: "90b83fd7d425ac4e58a1dd9063867d",
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        query: `query {
+          allCommunities {
+            id 
+            title
+            imageUrl
+            creatorSlug
+          }
+        }`,
+      }),
+    })
+      .then((response) => response.json())
+      .then((respostaCompleta) => {
+        const comunidadesVindasDoDato = respostaCompleta.data.allCommunities;
+        console.log(comunidadesVindasDoDato);
+        setComunidades(comunidadesVindasDoDato);
+      });
   }, []);
 
   return (
     <>
-      <AlurakutMenu githubUser={githubUser} />
+      <AlurakutMenu usuarioAleatorio={usuarioAleatorio} />
       <MainGrid>
         <div
           className="profileArea"
@@ -105,7 +137,7 @@ export default function Home() {
             gridArea: "profileArea",
           }}
         >
-          <ProfileSideBar githubUser={githubUser} />
+          <ProfileSideBar usuarioAleatorio={usuarioAleatorio} />
         </div>
         <div
           className="welcomeArea"
@@ -153,8 +185,8 @@ export default function Home() {
               {comunidades?.map((comunidade) => {
                 return (
                   <li key={comunidade.id}>
-                    <a href={`/users/${comunidade.title}`}>
-                      <img src={comunidade.image} />
+                    <a href={`/communities/${comunidade.id}`}>
+                      <img src={comunidade.imageUrl} />
                       <span>{comunidade.title}</span>
                     </a>
                   </li>
@@ -167,9 +199,9 @@ export default function Home() {
               Pessoas da comunidade ({pessoasFavoritas.length})
             </h2>
             <ul>
-              {pessoasFavoritas.map((itemAtual) => {
+              {pessoasFavoritas.map((itemAtual, index) => {
                 return (
-                  <li key={itemAtual}>
+                  <li key={index}>
                     <a href={`/users/${itemAtual}`}>
                       <img src={`https://github.com/${itemAtual}.png`} />
                       <span>{itemAtual}</span>

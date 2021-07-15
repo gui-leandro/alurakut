@@ -87,9 +87,6 @@ export default function Home() {
       const comunidadesAtualizadas = [...comunidades, comunidade];
       setComunidades(comunidadesAtualizadas);
     });
-
-    const updateComunities = [...comunidades, comunidade];
-    setComunidades(updateComunities);
   }
 
   useEffect(() => {

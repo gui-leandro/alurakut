@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Box from "../src/components/Box";
 import MainGrid from "../src/components/MainGrid";
 import {
@@ -28,7 +28,30 @@ function ProfileSideBar(props) {
   );
 }
 
+function ProfileRelationsBox(props) {
+  return (
+    <ProfileRelationsBoxWrapper>
+      <h2 className="smalltitle">
+        {props.title} ({props.items.length})
+      </h2>
+      <ul>
+        {/* {pessoasFavoritas.map((itemAtual) => {
+          return (
+            <li key={itemAtual}>
+              <a href={`/users/${itemAtual}`}>
+                <img src={`https://github.com/${itemAtual}.png`} />
+                <span>{itemAtual}</span>
+              </a>
+            </li>
+          );
+        })} */}
+      </ul>
+    </ProfileRelationsBoxWrapper>
+  );
+}
+
 export default function Home() {
+  const [seguidores, setSeguidores] = useState([]);
   const [comunidades, setComunidades] = useState([
     {
       id: "2021-07-14T01:33:34.025Z",
@@ -59,6 +82,18 @@ export default function Home() {
     const updateComunities = [...comunidades, newComunity];
     setComunidades(updateComunities);
   }
+
+  useEffect(() => {
+    fetch(
+      `https://api.github.com/users/${githubUser}/followers`
+    )
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (response) {
+        setSeguidores(response);
+      });
+  }, []);
 
   return (
     <>
@@ -111,10 +146,9 @@ export default function Home() {
             gridArea: "profileRelationsArea",
           }}
         >
+          <ProfileRelationsBox title="Seguidores" items={seguidores} />
           <ProfileRelationsBoxWrapper>
-            <h2 className="smalltitle">
-              Comunidades ({comunidades.length})
-            </h2>
+            <h2 className="smalltitle">Comunidades ({comunidades.length})</h2>
             <ul>
               {comunidades?.map((comunidade) => {
                 return (
@@ -145,7 +179,6 @@ export default function Home() {
               })}
             </ul>
           </ProfileRelationsBoxWrapper>
-          <Box>Comunidade</Box>
         </div>
       </MainGrid>
     </>
